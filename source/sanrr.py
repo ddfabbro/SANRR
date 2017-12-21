@@ -132,9 +132,9 @@ class MyMIRTK():
       '-dofin',self.files['dofs'],'-ascii','-invert'])
       
       with open(self.files['out_vtk'], 'rt') as fin:
-         with open('./transformed/temp', 'wt') as fout:
+         with open('temp', 'wt') as fout:
             fout.write(fin.read().replace(' 0 ', ' 0\n'))
-      os.rename('./transformed/temp', self.files['out_vtk'])
+      os.rename('temp', self.files['out_vtk'])
       call(['sed','-i','/^$/d',self.files['out_vtk']])
    
    def editParin(self,X):
@@ -239,6 +239,7 @@ class MyMIRTK():
          model.train()
       print "Predicting optimal solution..."
       self.kdata = model.kdata()
+      del model
       position= np.where(self.kdata[2]==np.min(self.kdata[2]))
       self.solution = np.array([self.kdata[0][position[0][0],position[1][0]],
                                 self.kdata[1][position[0][0],position[1][0]]])
