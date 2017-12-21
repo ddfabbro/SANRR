@@ -83,7 +83,7 @@ class MyMIRTK():
       self.limits = [min_obj1,max_obj1,min_obj2,max_obj2]
 
    def setPCA(self,db,exp_var_ratio):
-      face_db = np.array([np.ravel(db['images'][i]) for i in range(db['images'].shape[0])])
+      face_db = np.array([np.ravel(db[i]) for i in range(db.shape[0])])
       mean_face = np.mean(face_db,0)
       centered_face_db = face_db - mean_face
       
