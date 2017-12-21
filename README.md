@@ -1,2 +1,2 @@
 # SANRR
-A framework for my Master's thesis
+A Python framework for my Master's thesis
