@@ -19,15 +19,16 @@ solver = MyMIRTK([],2,True,configuration_file)
 
 solver.setPCA(fei_db['images'],.8)
 
+files = {'ref_im': '../mirtk_folder/im/mean.pgm',
+         'ref_vtk': '../mirtk_folder/im/mean.vtk',
+         'dofs': '../mirtk_folder/dofs/b__a.dof.gz'}
+
 for name in glob.glob('../mirtk_folder/im/*.pgm'):
     name = name[19:][:-4]
-    files = {'ref_im': '../mirtk_folder/im/mean.pgm',
-             'ref_vtk': '../mirtk_folder/im/mean.vtk',
-             'mov_im': '../mirtk_folder/im/'+name+'.pgm',
-             'mov_vtk': '../mirtk_folder/im/'+name+'.vtk',
-             'out_im': '../mirtk_folder/transformed/'+name+'.pgm',
-             'out_vtk': '../mirtk_folder/transformed/'+name+'.vtk',
-             'dofs': '../mirtk_folder/dofs/b__a.dof.gz'}
+    files['mov_im'] = '../mirtk_folder/im/'+name+'.pgm'
+    files['mov_vtk'] = '../mirtk_folder/im/'+name+'.vtk'
+    files['out_im'] = '../mirtk_folder/transformed/'+name+'.pgm'
+    files['out_vtk'] = '../mirtk_folder/transformed/'+name+'.vtk'
     
     np.random.seed(1)
     solver.krigeRegister(files,11,5)
