@@ -14,21 +14,10 @@ from mydata import create_fei_db
 
 fei_db = create_fei_db()
 
-additional_params = []
-n_resolutions = 2
-control_points_as_params = True
 configuration_file = '../mirtk_folder/register-2d-face-landmarks.cfg'
+solver = MyMIRTK([],2,True,configuration_file)
 
-solver = MyMIRTK(additional_params,
-                 n_resolutions,
-                 control_points_as_params,
-                 configuration_file)
-
-explained_variance = .8
-solver.setPCA(fei_db['images'],explained_variance)
-
-samples = 11
-numiter = 5
+solver.setPCA(fei_db['images'],.8)
 
 for name in glob.glob('../mirtk_folder/im/*.pgm'):
     name = name[19:][:-4]
@@ -41,4 +30,4 @@ for name in glob.glob('../mirtk_folder/im/*.pgm'):
              'dofs': '../mirtk_folder/dofs/b__a.dof.gz'}
     
     np.random.seed(1)
-    solver.krigeRegister(files,samples,numiter)
+    solver.krigeRegister(files,11,5)
