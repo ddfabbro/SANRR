@@ -34,23 +34,6 @@ class MyKriging(kriging):
       spx = (self.X[:,0] * (self.normRange[0][1] - self.normRange[0][0])) + self.normRange[0][0]
       spy = (self.X[:,1] * (self.normRange[1][1] - self.normRange[1][0])) + self.normRange[1][0] 
       return X,Y,Z,Ze,spx,spy
-         
-   def myplot(self,k,i):
-      fig = plt.figure()
-      ax = fig.add_subplot(111)
-      X,Y,Z,Ze,spx,spy=k.kdata()
-      rcParams['contour.negative_linestyle'] = 'solid'
-      plt.contour(X,Y,Z,10, cmap='gray')
-      plt.scatter(spx,spy,c=[0,0,0],edgecolors='white',s=100,zorder=1000)
-      ax.set_xlim([0,1])
-      ax.set_ylim([0,1])
-      ax.set_xlabel(r'$\phi_1$')
-      ax.set_ylabel(r'$\phi_2$')
-      plt.xticks(np.array([.1,.3,.5,.7,.9]))
-      ax.set_xticklabels(np.array([20,40,60,80,100]))
-      plt.yticks(np.array([.1,.3,.5,.7,.9]))
-      ax.set_yticklabels(np.array([20,40,60,80,100]))
-      fig.savefig("kriging"+str(i)+".pdf")
 
 class MyMIRTK():
    def __init__(self,params,n_resolution,c_points,parin):
