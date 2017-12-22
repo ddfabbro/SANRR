@@ -8,14 +8,14 @@ Created on Thu Dec 21 16:54:50 2017
 import numpy as np
 import glob
 import sys
-sys.path.append('../source')
-from sanrr import MyMIRTK
-from mydata import create_fei_db
+sys.path.append('../sanrr')
+from register import SANRR
+from download_data import create_fei_db
 
 fei_db = create_fei_db()
 
 configuration_file = '../mirtk_folder/register-2d-face-landmarks.cfg'
-solver = MyMIRTK([],2,True,configuration_file)
+solver = SANRR([],2,True,configuration_file)
 
 solver.setPCA(fei_db['images'],.8)
 
