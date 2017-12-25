@@ -35,13 +35,16 @@ class SANRR():
         """
         self.editParin(np.array(np.zeros(self.n_resolution+len(self.params))))
         self.mirtkRegister()
-        min_obj1,max_obj2 = self.scoreObjectives()
+        min_obj1 = self.scoreLandmarks()
+        max_obj2 = self.scorePCA()
         
         self.editParin(np.array(np.ones(self.n_resolution+len(self.params))))
         self.mirtkRegister()
-        max_obj1,min_obj2 = self.scoreObjectives()
-      
-        self.limits = [min_obj1,max_obj1,min_obj2,max_obj2]
+        max_obj1 = self.scoreLandmarks()
+        min_obj2 = self.scorePCA()
+    
+        self.limits_obj1 = [min_obj1, max_obj1]
+        self.limits_obj2 = [min_obj2, max_obj2]
 
     def setPCA(self,db,exp_var_ratio):
         face_db = np.array([np.ravel(db[i]) for i in range(db.shape[0])])
@@ -124,14 +127,7 @@ class SANRR():
                 fout.write(''.join(map(str, f_edit)))
         os.rename('temp', self.parin)
    
-    def scoreObjectives(self):
-        """
-        This function returns a registration score for given parameters
-        
-        OUTPUT
-        obj1: euclidean distance between landmarks
-        obj2: euclidean distance between principal components
-        """
+    def scoreLandmarks(self):
         ###Objective 1 - Landmarks Euclidean Distance
         with open(self.files['ref_vtk'], 'rt') as f_vtk1:
             vtk_list1 = f_vtk1.readlines()
@@ -144,8 +140,9 @@ class SANRR():
             dist = np.sqrt(np.sum((landmark1-landmark2)**2))
             dist_array = np.append(dist_array,dist)
          
-        obj1 = np.sum(dist_array)
-      
+        return np.sum(dist_array)
+    
+    def scorePCA(self):
         ###Objective 2 - Face Components Euclidean Distance
         face1 = np.ravel(io.imread(self.files['mov_im']))
         face2 = np.ravel(io.imread(self.files['out_im']))
@@ -156,9 +153,7 @@ class SANRR():
         face2[face2==0] = self.mean_face[face2==0]
         pca_face2 = self.pca.transform((face2-self.mean_face).reshape(1, -1))
       
-        obj2 = np.sqrt(np.sum((pca_face1-pca_face2)**2))
-      
-        return obj1, obj2
+        return np.sqrt(np.sum((pca_face1-pca_face2)**2))
       
     def costFun(self,X):
         try:
@@ -170,8 +165,8 @@ class SANRR():
         for i in range(X.shape[0]):
             self.editParin(X[i,:])
             self.mirtkRegister()
-            norm_obj1 = (self.scoreObjectives()[0]-self.limits[1])/(self.limits[1]-self.limits[0])+1
-            norm_obj2 = (self.scoreObjectives()[1]-self.limits[3])/(self.limits[3]-self.limits[2])+1
+            norm_obj1 = (self.scoreLandmarks()-self.limits_obj1[1])/(self.limits_obj1[1]-self.limits_obj1[0])+1
+            norm_obj2 = (self.scorePCA()-self.limits_obj2[1])/(self.limits_obj2[1]-self.limits_obj2[0])+1
             f[i] = np.clip(norm_obj1,0,1) + np.clip(norm_obj2,0,1)
 
         return f
