@@ -170,9 +170,9 @@ class SANRR():
         for i in range(X.shape[0]):
             self.editParin(X[i,:])
             self.mirtkRegister()
-            norm_obj1 = 1/(self.limits[1]-self.limits[0])*(self.scoreObjectives()[0]-self.limits[1])+1
-            norm_obj2 = 1/(self.limits[3]-self.limits[2])*(self.scoreObjectives()[1]-self.limits[3])+1
-            f[i] = np.clip(norm_obj1,0,1)**2 + np.clip(norm_obj2,0,1)**2
+            norm_obj1 = (self.scoreObjectives()[0]-self.limits[1])/(self.limits[1]-self.limits[0])+1
+            norm_obj2 = (self.scoreObjectives()[1]-self.limits[3])/(self.limits[3]-self.limits[2])+1
+            f[i] = np.clip(norm_obj1,0,1) + np.clip(norm_obj2,0,1)
 
         return f
 
