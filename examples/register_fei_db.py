@@ -19,15 +19,11 @@ save_files(fei_db,'../mirtk_folder/im/')
 configuration_file = '../mirtk_folder/register-2d-face-landmarks.cfg'
 solver = SANRR([],2,True,configuration_file)
 
-np.random.seed(0)
 solver.setPCA(fei_db['images'],.8)
 
 files = {'ref_im': '../mirtk_folder/im/mean/mean.pgm',
          'ref_vtk': '../mirtk_folder/im/mean/mean.vtk',
          'dofs': '../mirtk_folder/dofs/b__a.dof.gz'}
-
-time_list = []
-kdata_list = []
 
 for name in glob.glob('../mirtk_folder/im/*.pgm'):
     name = name[19:][:-4]
