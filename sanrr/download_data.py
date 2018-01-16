@@ -5,6 +5,7 @@ Created on Tue Oct  3 12:53:17 2017
 
 @author: davi
 """
+import os
 import numpy as np
 import dlib
 from PIL import Image
@@ -61,10 +62,13 @@ def create_fei_db():
             'landmarks': np.array(landmarks_db,dtype=np.float64)}
 
 def save_files(dataset,dest):
+    if not os.path.exists(dest+'mean/'):
+        os.makedirs(dest+'mean/')
+    
     face_db = dataset['images']
     for i in range(face_db.shape[0]):
         Image.fromarray(face_db[i]).save(dest+str(i+1)+'.pgm')
-    Image.fromarray(np.mean(face_db,0).astype(np.uint8)).save(dest+'mean.pgm')
+    Image.fromarray(np.mean(face_db,0).astype(np.uint8)).save(dest+'mean/mean.pgm')
    
     landmarks_db = dataset['landmarks']
    
@@ -87,6 +91,6 @@ def save_files(dataset,dest):
         file_vtk.append(line)
     for line in landmarks_db:
         file_vtk.append(str(line[0]-face_db.shape[1]/2.)+' '+str(line[1]-face_db.shape[2]/2.)+' 0.0')                                         
-        with open(dest+'mean.vtk','w') as vtk:
+        with open(dest+'mean/mean.vtk','w') as vtk:
             for item in file_vtk:
                 vtk.write("%s\n" % item)

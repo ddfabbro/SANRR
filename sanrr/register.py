@@ -81,7 +81,7 @@ class SANRR():
         """
         Subroutine for MIRTK command line (Linux)
         Error while loading shared libraries.\n \
-        Maybe 'sudo ldconfig opt/mirtk/lib' will create a link to your project folder."
+        Maybe 'sudo ldconfig /opt/mirtk/lib' will create a link to your project folder."
         """
         #Generate transformation file
         call(['/opt/mirtk/bin/./mirtk','register','-parin',self.parin,'-image',
