@@ -12,13 +12,21 @@ from PIL import Image
 import urllib
 from StringIO import StringIO
 from zipfile import ZipFile
+import bz2
 from sklearn.datasets import fetch_lfw_people
 
 def create_lfw_db():
     lfw_people = fetch_lfw_people(resize=1,slice_=(slice(70, 250-30, None), slice(50, 250-50, None)))
-   
+    
+    url = 'http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2'
+    filepath  = urllib.urlretrieve(url)[0]
+    zipfile = bz2.BZ2File(filepath)
+    data = zipfile.read()
+    newfilepath = filepath[:-4]
+    open(newfilepath, 'wb').write(data)
+    
     detector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+    predictor = dlib.shape_predictor(newfilepath)
    
     face_db = []
     landmarks_db=[]
@@ -40,8 +48,15 @@ def create_fei_db():
     zip_files  = [urllib.urlretrieve(url1)[0],urllib.urlretrieve(url2)[0]]
     archive = [ZipFile(zip_files[0],'r'),ZipFile(zip_files[1],'r')]
    
+    url = 'http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2'
+    filepath  = urllib.urlretrieve(url)[0]
+    zipfile = bz2.BZ2File(filepath)
+    data = zipfile.read()
+    newfilepath = filepath[:-4]
+    open(newfilepath, 'wb').write(data)
+    
     detector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+    predictor = dlib.shape_predictor(newfilepath)
    
     face_db = []
     landmarks_db=[]
