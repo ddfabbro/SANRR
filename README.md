@@ -13,7 +13,7 @@ A Python framework for Surrogate Assisted Nonrigid Registration (SANRR) using MI
 
 ## Fast getting started example: SANRR of [FEI Face Database](https://fei.edu.br/~cet/facedatabase.html)
 
-After installing the requirements, you can easily get started with SANRR of [FEI Face Database](https://fei.edu.br/~cet/facedatabase.html) by following these 3 steps:
+After installing the requirements, you can easily get started with SANRR of [FEI Face Database](https://fei.edu.br/~cet/facedatabase.html) by following these 5 steps:
 
 1. Clone repository
 ```
