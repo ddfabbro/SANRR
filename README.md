@@ -30,7 +30,7 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)/SANRR
 docker pull biomedia/mirtk
 ```
 
-4. Create a container named `mirtk` with shared volume
+4. Create a container named `mirtk` with shared volume on `SANRR/mirtk_folder/`
 ```
 docker run -t -d --name mirtk --entrypoint /bin/bash -v $(pwd)/SANRR/mirtk_folder/:$(pwd)/SANRR/mirtk_folder/ biomedia/mirtk
 ```
