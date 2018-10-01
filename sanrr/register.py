@@ -1,17 +1,14 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Aug  9 09:56:44 2017
-
-@author: davi
-"""
 import os
 import numpy as np
 from skimage import io
-from sklearn.decomposition import PCA
 from subprocess import call
 from pyDOE import lhs
 from metamodel import MyKriging
+
+#Import git submodule
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "expvar-pca"))
+from expvarpca import PCA
  
 class SANRR():
     def __init__(self,params,n_resolution,c_points,parin):
@@ -20,82 +17,75 @@ class SANRR():
         self.c_points = c_points
         self.parin = parin
       
-    def setFiles(self,files):
+    def set_files(self,files):
         """
-        files = {'ref_im': ref_im_path, 'ref_vtk': ref_vtk_path,
-                 'mov_im': mov_im_path, 'mov_vtk': mov_vtk_path',
-                 'out_im': out_im_path, 'out_vtk': out_vtk_path,
-                 'dofs': dofs_path}
+        files = {
+            'ref_im': ref_im_path, 
+            'ref_vtk': ref_vtk_path,
+            'mov_im': mov_im_path, 
+            'mov_vtk': mov_vtk_path',
+            'out_im': out_im_path, 
+            'out_vtk': out_vtk_path,
+            'dofs': dofs_path,
+        }
         """
         self.files = files
       
-    def setLimits(self):
+    def set_limits(self):
         """
-        This function sets the boundaries of objectives 1 and 2 for normalization
+        Sets the boundaries of objectives 1 and 2 for normalization
         """
-        self.editParin(np.array(np.zeros(self.n_resolution+len(self.params))))
-        self.mirtkRegister()
-        min_obj1 = self.scoreLandmarks()
-        max_obj2 = self.scorePCA()
+        self.edit_parin(np.array(np.zeros(self.n_resolution+len(self.params))))
+        self.mirtk_register()
+        self.min_obj1 = self.score_landmarks()
+        self.max_obj2 = self.score_PCA()
         
-        self.editParin(np.array(np.ones(self.n_resolution+len(self.params))))
-        self.mirtkRegister()
-        max_obj1 = self.scoreLandmarks()
-        min_obj2 = self.scorePCA()
-    
-        self.limits_obj1 = [min_obj1, max_obj1]
-        self.limits_obj2 = [min_obj2, max_obj2]
-
-    def setPCA(self,db,exp_var_ratio):
+        self.edit_parin(np.array(np.ones(self.n_resolution+len(self.params))))
+        self.mirtk_register()
+        self.max_obj1 = self.score_landmarks()
+        self.min_obj2 = self.score_PCA()
+        
+    def set_PCA(self, db, target_exp_var, bounds):
         face_db = np.array([np.ravel(db[i]) for i in range(db.shape[0])])
         mean_face = np.mean(face_db,0)
         centered_face_db = face_db - mean_face
-      
-        c0 = 0
-        c1 = 100
-        c = (c0+c1)/2
-        found = False
-        pca = PCA(n_components=c).fit(centered_face_db)
-      
-        while not found:
-            if np.sum(pca.explained_variance_ratio_)>exp_var_ratio:
-                c1 = c
-                c = (c0+c1)/2
-            else:
-                c0 = c
-                c = (c0+c1)/2
-                
-            pca = PCA(n_components=c).fit(centered_face_db)
-            if c0 == c1 or c0 == c1-1:
-                found = True
-                
-            print 'No. of components = '+str(c)+ \
-                  '\nExplained variance ratio = '+str(np.sum(pca.explained_variance_ratio_))
-             
-        pca = PCA(n_components=c+1).fit(centered_face_db)
-      
+        
+        pca = PCA(whiten=True,svd_solver='randomized')
+        pca.fit_exp_var(centered_face_db, target_exp_var, bounds)
+        
         self.pca = pca
         self.mean_face = mean_face
    
-    def mirtkRegister(self):
+    def mirtk_register(self):
         """
-        Subroutine for MIRTK command line (Linux)
-        Error while loading shared libraries.\n \
-        Maybe 'sudo ldconfig /opt/mirtk/lib' will create a link to your project folder."
+        Subroutine for MIRTK command line (Docker)
         """
         #Generate transformation file
-        call(['/opt/mirtk/bin/./mirtk','register','-parin',self.parin,'-image',
-              self.files['ref_im'],'-pset',self.files['ref_vtk'],'-image',self.files['mov_im'],'-pset',
-              self.files['mov_vtk'],'-dofout',self.files['dofs']])
+        call(['docker','exec','mirtk','/usr/local/bin/./mirtk',
+              'register',
+              '-parin', self.parin,
+              '-image', self.files['ref_im'],
+              '-pset', self.files['ref_vtk'],
+              '-image', self.files['mov_im'],
+              '-pset', self.files['mov_vtk'],
+              '-dofout', self.files['dofs']])
                 
         #Apply transformation to image
-        call(['/opt/mirtk/bin/./mirtk','transform-image',self.files['mov_im'],
-              self.files['out_im'],'-dofin',self.files['dofs']])
+        call(['docker','exec','mirtk','/usr/local/bin/./mirtk',
+              'transform-image',
+              self.files['mov_im'], 
+              self.files['out_im'], 
+              '-dofin', self.files['dofs']])
       
         #Apply transformation to landmarks
-        call(['/opt/mirtk/bin/./mirtk','transform-points',self.files['mov_vtk'],
-              self.files['out_vtk'],'-source',self.files['mov_im'],'-target',self.files['ref_im'],
-              '-dofin',self.files['dofs'],'-ascii','-invert'])
+        call(['docker','exec','mirtk','/usr/local/bin/./mirtk',
+              'transform-points',
+              self.files['mov_vtk'],
+              self.files['out_vtk'],
+              '-source', self.files['mov_im'],
+              '-target',self.files['ref_im'],
+              '-dofin',self.files['dofs'],
+              '-ascii','-invert'])
       
         with open(self.files['out_vtk'], 'rt') as fin:
             with open('temp', 'wt') as fout:
@@ -103,32 +93,41 @@ class SANRR():
         os.rename('temp', self.files['out_vtk'])
         call(['sed','-i','/^$/d',self.files['out_vtk']])
    
-    def editParin(self,X):
+    def edit_parin(self, X):
         """
         Edit parin files according to values from array X
         """
-        params_dic = {'imw': [23,"Image (dis-)similarity weight =",0,1],
-                      'psdw':[24,"Point set distance weight     =",0,1],
-                      'bew': [25,"Bending energy weight         =",0,.1]}
+        params_dic = {
+            'imw': [23,"Image (dis-)similarity weight =",0,1],
+            'psdw':[24,"Point set distance weight     =",0,1],
+            'bew': [25,"Bending energy weight         =",0,.1],
+        }
+        
         aux = [82,85,88,91,94,97]
         with open(self.parin, 'rt') as fin:
             with open('temp', 'wt') as fout:
                 f_edit = fin.readlines()
-                f_edit[13] = "No. of resolution levels =" + str(self.n_resolution) + "\n" 
+                f_edit[13] = "No. of resolution levels =" + \
+                                    str(self.n_resolution) + "\n" 
+                                    
                 if len(self.params) > 0:
                     for i in range(len(self.params)):
-                        f_edit[params_dic[self.params[i]][0]] = params_dic[self.params[i]][1] + \
-                                                       str(X[i]*params_dic[self.params[i]][3] + \
-                                                                params_dic[self.params[i]][2]) + "\n"
+                        f_edit[params_dic[self.params[i]][0]] = \
+                            params_dic[self.params[i]][1] + \
+                            str(X[i]*params_dic[self.params[i]][3] + \
+                            params_dic[self.params[i]][2]) + "\n"
+                                
                 if self.c_points == True:
                     for i in range(self.n_resolution):
                         f_edit[aux[i]] = "Control point spacing=" + \
-                                          str(np.round(X[i+len(self.params)]*190)+10) + "\n"
+                            str(np.round(X[i+len(self.params)]*190)+10) + "\n"
                 fout.write(''.join(map(str, f_edit)))
         os.rename('temp', self.parin)
    
-    def scoreLandmarks(self):
-        ###Objective 1 - Landmarks Euclidean Distance
+    def score_landmarks(self):
+        """
+        Objective 1 - Landmarks Euclidean Distance
+        """
         with open(self.files['ref_vtk'], 'rt') as f_vtk1:
             vtk_list1 = f_vtk1.readlines()
         with open(self.files['out_vtk'], 'rt') as f_vtk2:
@@ -142,8 +141,10 @@ class SANRR():
          
         return np.sum(dist_array)
     
-    def scorePCA(self):
-        ###Objective 2 - Face Components Euclidean Distance
+    def score_PCA(self):
+        """
+        Objective 2 - Face Components Euclidean Distance
+        """
         face1 = np.ravel(io.imread(self.files['mov_im']))
         face2 = np.ravel(io.imread(self.files['out_im']))
                            
@@ -155,7 +156,7 @@ class SANRR():
       
         return np.sqrt(np.sum((pca_face1-pca_face2)**2))
       
-    def costFun(self,X):
+    def cost_fun(self, X):
         try:
             X.shape[1]
         except:
@@ -163,17 +164,21 @@ class SANRR():
  
         f = np.empty(X.shape[0])
         for i in range(X.shape[0]):
-            self.editParin(X[i,:])
-            self.mirtkRegister()
-            norm_obj1 = (self.scoreLandmarks()-self.limits_obj1[1])/(self.limits_obj1[1]-self.limits_obj1[0])+1
-            norm_obj2 = (self.scorePCA()-self.limits_obj2[1])/(self.limits_obj2[1]-self.limits_obj2[0])+1
+            self.edit_parin(X[i,:])
+            self.mirtk_register()
+            
+            obj1 = self.score_landmarks()
+            obj2 = self.score_PCA()
+            norm_obj1 = (obj1 - self.max_obj1)/(self.max_obj1 - self.min_obj1)+1
+            norm_obj2 = (obj2 - self.max_obj2)/(self.max_obj2 - self.min_obj2)+1
+            
             f[i] = np.clip(norm_obj1,0,1) + np.clip(norm_obj2,0,1)
 
         return f
 
-    def krigeRegister(self,files,samples,numiter):
-        self.setFiles(files)
-        self.setLimits()
+    def krige_register(self, files, samples, numiter):
+        self.set_files(files)
+        self.set_limits()
       
         if self.c_points == True:
             dim = self.n_resolution + len(self.params)
@@ -182,25 +187,26 @@ class SANRR():
             dim = len(self.params)
             X = lhs(dim, samples=samples, criterion='maximin')
          
-        f = self.costFun
-        print "Sampling space..."
+        f = self.cost_fun
+        print("Sampling space...")
         y = f(X)
         model = MyKriging(X, y, name='simple')
-        print "Training kriging model..."
+        print("Training kriging model...")
         model.train()
         for i in range(numiter):  
-            print 'Infill iteration {0} of {1}....'.format(i + 1, numiter)
+            print('Infill iteration {0} of {1}....'.format(i + 1, numiter))
             newpoints = model.infill(1,method='ei')
             for point in newpoints:
                 model.addPoint(point, f(point)[0])
             model.train()
-        print "Predicting optimal solution..."
+        print("Predicting optimal solution...")
         self.kdata = model.kdata()
         del model
         position= np.where(self.kdata[2]==np.min(self.kdata[2]))
         self.solution = np.array([self.kdata[0][position[0][0],position[1][0]],
                                   self.kdata[1][position[0][0],position[1][0]]])
-        self.editParin(self.solution)
-        print "Registering image..."
-        self.mirtkRegister()
-        print "Done!"
+        self.edit_parin(self.solution)
+        print("Registering image...")
+        self.mirtk_register()
+        print("Done!")
+        

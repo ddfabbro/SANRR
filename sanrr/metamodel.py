@@ -1,10 +1,3 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Dec 22 15:11:20 2017
-
-@author: davi
-"""
 import numpy as np
 from pyKriging.krige import kriging
 

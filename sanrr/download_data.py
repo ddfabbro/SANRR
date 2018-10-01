@@ -1,10 +1,3 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Oct  3 12:53:17 2017
-
-@author: davi
-"""
 import os
 import numpy as np
 import dlib
